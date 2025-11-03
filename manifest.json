@@ -1,0 +1,22 @@
+{
+  "name": "youtrack-projects",
+  "title": "YouTrack Projects",
+  "description": "YouTrack app for JetBrains internship",
+  "$schema": "https://json.schemastore.org/youtrack-app.json",
+  "vendor": {
+    "name": "miloscuturic",
+    "url": "https://github.com/cuturic01"
+  },
+  "icon": "icon.svg",
+  "widgets": [
+
+    {
+      "key": "youtrack-projects",
+      "name": "Youtrack-Projects",
+      "indexPath": "youtrack-projects/index.html",
+      "extensionPoint": "MAIN_MENU_ITEM",
+      "iconPath": "youtrack-projects/widget-icon.svg",
+      "description": "Shows projects and toggles"
+    }
+  ]
+}
