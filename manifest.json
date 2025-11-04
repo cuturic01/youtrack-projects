@@ -15,7 +15,7 @@
       "name": "Test management",
       "indexPath": "test-management-projects/index.html",
       "extensionPoint": "MAIN_MENU_ITEM",
-      "iconPath": "projects/widget-icon.svg",
+      "iconPath": "test-management-projects/widget-icon.svg",
       "description": "Shows projects and toggles"
     }
   ]

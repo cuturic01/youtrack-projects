@@ -1,24 +1,47 @@
+exports.onInit = function (ctx) {
+    const ext = ctx.globalStorage.extensionProperties;
+
+    if (typeof ext.toggle === 'undefined') {
+        ext.toggle = 'false';
+        console.log('Initialized toggle to false');
+    }
+};
+
 exports.httpHandler = {
     endpoints: [
         {
             scope: 'global',
             method: 'GET',
-            path: 'storage/:key',
+            path: 'toggle',
             handle: function (ctx) {
-                const key = ctx.request.parameters.key;
-                const value = ctx.globalStorage.extensionProperties[key];
-                ctx.response.json(value || null);
+                try {
+                    const ext = ctx.globalStorage.extensionProperties;
+
+                    const toggle = ext.toggle === 'true';
+                    ctx.response.json({ toggle });
+                } catch (err) {
+                    console.error('Error in GET /toggle:', err);
+                    ctx.response.json({ toggle: false, error: err.message });
+                }
             }
         },
         {
             scope: 'global',
             method: 'POST',
-            path: 'storage/:key',
+            path: 'toggle',
             handle: function (ctx) {
-                const key = ctx.request.parameters.key;
-                const body = ctx.request.json();
-                ctx.globalStorage.extensionProperties[key] = body;
-                ctx.response.json({ success: true });
+                try {
+                    const body = ctx.request.json();
+                    const stringValue = String(body);
+
+                    ctx.globalStorage.extensionProperties.toggle = stringValue;
+                    ctx.response.json({ toggle: body, message: 'Updated toggle' });
+
+                    console.log('Updated toggle to', stringValue);
+                } catch (err) {
+                    console.error('Error in POST /toggle:', err);
+                    ctx.response.json({ toggle: false, error: err.message });
+                }
             }
         }
     ]
