@@ -1,14 +1,25 @@
 exports.httpHandler = {
-  endpoints: [
-    {
-      method: 'GET',
-      path: 'debug',
-      handle: function handle(ctx) {
-        // See https://www.jetbrains.com/help/youtrack/devportal-apps/apps-reference-http-handlers.html#request
-        const requestParam = ctx.request.getParameter('test');
-        // See https://www.jetbrains.com/help/youtrack/devportal-apps/apps-reference-http-handlers.html#response
-        ctx.response.json({test: requestParam});
-      }
-    }
-  ]
+    endpoints: [
+        {
+            scope: 'global',
+            method: 'GET',
+            path: 'storage/:key',
+            handle: function (ctx) {
+                const key = ctx.request.parameters.key;
+                const value = ctx.globalStorage.extensionProperties[key];
+                ctx.response.json(value || null);
+            }
+        },
+        {
+            scope: 'global',
+            method: 'POST',
+            path: 'storage/:key',
+            handle: function (ctx) {
+                const key = ctx.request.parameters.key;
+                const body = ctx.request.json();
+                ctx.globalStorage.extensionProperties[key] = body;
+                ctx.response.json({ success: true });
+            }
+        }
+    ]
 };

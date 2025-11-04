@@ -49,7 +49,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         // List every widget entry point here
-        youtrackProjects: resolve(__dirname, 'src/widgets/youtrack-projects/index.html'),
+        youtrackProjects: resolve(__dirname, 'src/widgets/test-management-projects/index.html'),
 
       }
     }
