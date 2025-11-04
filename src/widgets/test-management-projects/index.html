@@ -1,7 +1,17 @@
 <!doctype html>
 <html>
   <head>
-    <link rel="stylesheet" href="app.css">
+      <style>
+          html, body, #root {
+              background-color: #1f1f22;
+          }
+          body.ring-ui-theme-dark html,
+          body.ring-ui-theme-dark #root {
+              background-color: #1f1f22 !important;
+          }
+      </style>
+
+      <link rel="stylesheet" href="app.css">
   </head>
   <body>
     <div id="root"></div>
