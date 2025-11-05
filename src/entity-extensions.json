@@ -5,6 +5,12 @@
       "properties": {
         "toggle": {
           "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "clientId": {
+          "type": "string"
         }
       }
     }

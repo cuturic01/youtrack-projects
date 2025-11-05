@@ -1,12 +1,3 @@
-exports.onInit = function (ctx) {
-    const ext = ctx.globalStorage.extensionProperties;
-
-    if (typeof ext.toggle === 'undefined') {
-        ext.toggle = 'false';
-        console.log('Initialized toggle to false');
-    }
-};
-
 exports.httpHandler = {
     endpoints: [
         {
@@ -16,12 +7,14 @@ exports.httpHandler = {
             handle: function (ctx) {
                 try {
                     const ext = ctx.globalStorage.extensionProperties;
+                    const toggle = ext.toggle ? ext.toggle === 'true' : false;
+                    const timestamp = ext.timestamp ? Number(ext.timestamp) : 0;
+                    const clientId = ext.clientId || 'system';
 
-                    const toggle = ext.toggle === 'true';
-                    ctx.response.json({ toggle });
+                    ctx.response.json({ toggle, timestamp, clientId });
                 } catch (err) {
                     console.error('Error in GET /toggle:', err);
-                    ctx.response.json({ toggle: false, error: err.message });
+                    ctx.response.json({ error: err.error_description });
                 }
             }
         },
@@ -31,16 +24,62 @@ exports.httpHandler = {
             path: 'toggle',
             handle: function (ctx) {
                 try {
-                    const body = ctx.request.json();
-                    const stringValue = String(body);
+                    const body = JSON.parse(ctx.request.json());
 
-                    ctx.globalStorage.extensionProperties.toggle = stringValue;
-                    ctx.response.json({ toggle: body, message: 'Updated toggle' });
+                    if (!body) {
+                        ctx.response.status = 400;
+                        ctx.response.json({ error: 'Invalid request body' });
+                        return;
+                    }
 
-                    console.log('Updated toggle to', stringValue);
+                    const ext = ctx.globalStorage.extensionProperties;
+
+                    const newTimestamp = Number(body.timestamp);
+                    const newClientId = body.clientId;
+
+                    const oldTimestamp = ext.timestamp ? Number(ext.timestamp) : 0;
+                    const oldClientId = ext.clientId || 'system';
+
+                    const isNewer =
+                        newTimestamp > oldTimestamp ||
+                        (newTimestamp === oldTimestamp && newClientId > oldClientId);
+
+                    if (isNewer) {
+                        ctx.globalStorage.extensionProperties.toggle = String(body.toggle);
+                        ctx.globalStorage.extensionProperties.timestamp = String(newTimestamp);
+                        ctx.globalStorage.extensionProperties.clientId = newClientId;
+
+                        console.log(
+                            `Accepted toggle update to ${ext.toggle} from ${newClientId} @ ${newTimestamp}`
+                        );
+
+                        ctx.response.json({
+                            toggle: body.toggle,
+                            timestamp: newTimestamp,
+                            clientId: newClientId,
+                            message: 'Update accepted'
+                        });
+                    } else {
+                        console.log(`Rejected stale toggle update from ${newClientId}`);
+
+                        ctx.response.status = 409;
+                        ctx.response.json({
+                            conflict: true,
+                            reason: 'stale',
+                            latest: {
+                                toggle: ext.toggle === 'true',
+                                timestamp: oldTimestamp,
+
+                                newTimestamp: newTimestamp,
+                                body: body,
+
+                                clientId: oldClientId
+                            }
+                        });
+                    }
                 } catch (err) {
                     console.error('Error in POST /toggle:', err);
-                    ctx.response.json({ toggle: false, error: err.message });
+                    ctx.response.json({ error: err.error_description });
                 }
             }
         }
