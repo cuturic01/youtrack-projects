@@ -7,14 +7,25 @@ exports.httpHandler = {
             handle: function (ctx) {
                 try {
                     const ext = ctx.globalStorage.extensionProperties;
+
                     const toggle = ext.toggle ? ext.toggle === 'true' : false;
-                    const timestamp = ext.timestamp ? Number(ext.timestamp) : 0;
+                    const version = Number(ext.version || 0);
+                    const timestamp = Number(ext.timestamp || 0);
                     const clientId = ext.clientId || 'system';
 
-                    ctx.response.json({ toggle, timestamp, clientId });
+                    ctx.response.json({
+                        toggle,
+                        version,
+                        timestamp,
+                        clientId
+                    });
                 } catch (err) {
                     console.error('Error in GET /toggle:', err);
-                    ctx.response.json({ error: err.error_description });
+                    ctx.response.status = 500;
+                    ctx.response.json({
+                        error: 'Failed to retrieve toggle state',
+                        details: err.message
+                    });
                 }
             }
         },
@@ -26,62 +37,91 @@ exports.httpHandler = {
                 try {
                     const body = JSON.parse(ctx.request.json());
 
-                    if (!body) {
+                    if (!body || typeof body.toggle !== 'boolean') {
                         ctx.response.status = 400;
-                        ctx.response.json({ error: 'Invalid request body' });
+                        ctx.response.json({
+                            error: 'Invalid request',
+                            details: 'Body must contain boolean "toggle" field'
+                        });
+                        return;
+                    }
+
+                    if (typeof body.expectedVersion !== 'number') {
+                        ctx.response.status = 400;
+                        ctx.response.json({
+                            error: 'Invalid request',
+                            details: 'Body must contain numeric "expectedVersion" field'
+                        });
+                        return;
+                    }
+
+                    if (!body.clientId || typeof body.clientId !== 'string') {
+                        ctx.response.status = 400;
+                        ctx.response.json({
+                            error: 'Invalid request',
+                            details: 'Body must contain string "clientId" field'
+                        });
                         return;
                     }
 
                     const ext = ctx.globalStorage.extensionProperties;
 
-                    const newTimestamp = Number(body.timestamp);
-                    const newClientId = body.clientId;
+                    const currentVersion = Number(ext.version || 0);
+                    const expectedVersion = Number(body.expectedVersion);
 
-                    const oldTimestamp = ext.timestamp ? Number(ext.timestamp) : 0;
-                    const oldClientId = ext.clientId || 'system';
-
-                    const isNewer =
-                        newTimestamp > oldTimestamp ||
-                        (newTimestamp === oldTimestamp && newClientId > oldClientId);
-
-                    if (isNewer) {
-                        ctx.globalStorage.extensionProperties.toggle = String(body.toggle);
-                        ctx.globalStorage.extensionProperties.timestamp = String(newTimestamp);
-                        ctx.globalStorage.extensionProperties.clientId = newClientId;
-
+                    if (expectedVersion !== currentVersion) {
                         console.log(
-                            `Accepted toggle update to ${ext.toggle} from ${newClientId} @ ${newTimestamp}`
+                            `Version conflict: expected ${expectedVersion}, current ${currentVersion}`
                         );
-
-                        ctx.response.json({
-                            toggle: body.toggle,
-                            timestamp: newTimestamp,
-                            clientId: newClientId,
-                            message: 'Update accepted'
-                        });
-                    } else {
-                        console.log(`Rejected stale toggle update from ${newClientId}`);
 
                         ctx.response.status = 409;
                         ctx.response.json({
                             conflict: true,
-                            reason: 'stale',
+                            reason: 'version_mismatch',
+                            expected: expectedVersion,
+                            current: currentVersion,
                             latest: {
                                 toggle: ext.toggle === 'true',
-                                timestamp: oldTimestamp,
-
-                                newTimestamp: newTimestamp,
-                                body: body,
-
-                                clientId: oldClientId
-                            }
+                                version: currentVersion,
+                                timestamp: Number(ext.timestamp || 0),
+                                clientId: ext.clientId || 'system'
+                            },
+                            message: 'State was modified by another client. Please refresh and try again.'
                         });
+                        return;
                     }
+
+                    const newVersion = currentVersion + 1;
+                    const serverTimestamp = Date.now();
+
+                    ext.toggle = String(body.toggle);
+                    ext.version = String(newVersion);
+                    ext.timestamp = String(serverTimestamp);
+                    ext.clientId = body.clientId;
+
+                    console.log(
+                        `Toggle updated: ${body.toggle} by ${body.clientId} (v${currentVersion} → v${newVersion})`
+                    );
+
+                    ctx.response.json({
+                        success: true,
+                        toggle: body.toggle,
+                        version: newVersion,
+                        timestamp: serverTimestamp,
+                        clientId: body.clientId,
+                        message: 'Toggle updated successfully'
+                    });
+
                 } catch (err) {
                     console.error('Error in POST /toggle:', err);
-                    ctx.response.json({ error: err.error_description });
+                    ctx.response.status = 500;
+                    ctx.response.json({
+                        error: 'Failed to update toggle state',
+                        details: err.message
+                    });
                 }
             }
+
         }
     ]
 };

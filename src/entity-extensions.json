@@ -11,6 +11,9 @@
         },
         "clientId": {
           "type": "string"
+        },
+        "version": {
+          "type": "string"
         }
       }
     }

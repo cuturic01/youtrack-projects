@@ -14,6 +14,7 @@ import './app.css';
 const App = () => {
     const [projects, setProjects] = useState<Project[]>([]);
     const [globalFlag, setGlobalFlag] = useState(false);
+    const [version, setVersion] = useState<number>(0);
     const [timestamp, setTimestamp] = useState<number>(0);
     const [clientId, setClientId] = useState<string>('');
     const [saving, setSaving] = useState(false);
@@ -38,8 +39,9 @@ const App = () => {
 
                 if (response && typeof response.toggle === 'boolean') {
                     setGlobalFlag(response.toggle);
+                    setVersion(response.version || 0);
                     setTimestamp(response.timestamp || 0);
-                    setClientId(response.clientId);
+                    setClientId(response.clientId || 'system');
                 }
 
                 setTimeout(() => setIsLoading(false), 100);
@@ -68,8 +70,8 @@ const App = () => {
 
             const payload = {
                 toggle: value,
-                timestamp: Date.now(),
-                clientId: userInfo.login + userInfo.id
+                expectedVersion: version,
+                clientId: userInfo.login + '-' + userInfo.id
             };
 
             const response = await host.fetchApp('backend/toggle', {
@@ -79,22 +81,49 @@ const App = () => {
             });
 
             if (response.conflict) {
-                alertService.warning('Update conflict detected. Reloading latest state...');
+                alertService.warning(
+                    response.message || 'Update conflict. Reloading latest state...'
+                );
+
                 const latest = response.latest;
                 setGlobalFlag(latest.toggle);
+                setVersion(latest.version);
                 setTimestamp(latest.timestamp);
                 setClientId(latest.clientId);
+
+                setTimeout(() => {
+                    void saveFlag(value);
+                }, 500);
+            } else if (response.success) {
+                setVersion(response.version);
+                setTimestamp(response.timestamp);
+                setClientId(response.clientId);
             } else {
-                setTimestamp(payload.timestamp);
-                setClientId(payload.clientId);
+                throw new Error('Unexpected response format');
             }
         } catch (err: any) {
             console.error('Error saving global flag:', err);
-            alertService.error('Failed to save changes');
+            alertService.error(err.message || 'Failed to save changes');
+
+            try {
+                const response = await host.fetchApp('backend/toggle', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (response) {
+                    setGlobalFlag(response.toggle);
+                    setVersion(response.version || 0);
+                    setTimestamp(response.timestamp || 0);
+                    setClientId(response.clientId || 'system');
+                }
+            } catch (reloadErr) {
+                console.error('Failed to reload state:', reloadErr);
+            }
         } finally {
             setSaving(false);
         }
-    }, [host, clientId]);
+    }, [host, version]);
+
 
     const handleToggleChange = useCallback(
         (checked: boolean) => {
@@ -128,7 +157,7 @@ const App = () => {
                 </div>
 
                 <Text info style={{ marginTop: 8 }}>
-                    Last updated: <b>{new Date(timestamp).toLocaleString()}</b> by <b>{clientId}</b>
+                    Version: <b>{version}</b>, Last updated: <b>{new Date(timestamp).toLocaleString()}</b> by <b>{clientId}</b>
                 </Text>
 
                 <div className="yt-section-spacer" />
