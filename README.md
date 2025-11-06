@@ -126,4 +126,4 @@ The **version-based OCC** model provides the ideal balance:
 
 ## Packaging
 
-The app is bundled as dist.zip file, which is available at the root of the project
+The app is bundled as dist.zip file, which is available [here](./dist.zip).
