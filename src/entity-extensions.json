@@ -1,0 +1,21 @@
+{
+  "entityTypeExtensions": [
+    {
+      "entityType": "AppGlobalStorage",
+      "properties": {
+        "toggle": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "clientId": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    }
+  ]
+}

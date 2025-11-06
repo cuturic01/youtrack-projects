@@ -1,6 +1,6 @@
 {
-  "name": "youtrack-projects",
-  "title": "YouTrack Projects",
+  "name": "test-management-projects",
+  "title": "Test management",
   "description": "YouTrack app for JetBrains internship",
   "$schema": "https://json.schemastore.org/youtrack-app.json",
   "vendor": {
@@ -11,11 +11,11 @@
   "widgets": [
 
     {
-      "key": "youtrack-projects",
-      "name": "Youtrack-Projects",
-      "indexPath": "youtrack-projects/index.html",
+      "key": "test-management-projects",
+      "name": "Test management",
+      "indexPath": "test-management-projects/index.html",
       "extensionPoint": "MAIN_MENU_ITEM",
-      "iconPath": "youtrack-projects/widget-icon.svg",
+      "iconPath": "test-management-projects/widget-icon.svg",
       "description": "Shows projects and toggles"
     }
   ]
