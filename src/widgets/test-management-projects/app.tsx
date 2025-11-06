@@ -8,6 +8,7 @@ import Text from '@jetbrains/ring-ui-built/components/text/text';
 import Group from '@jetbrains/ring-ui-built/components/group/group';
 import Loader from '@jetbrains/ring-ui-built/components/loader/loader';
 import type { Project } from './types';
+
 import './app.css';
 
 const App = () => {
@@ -86,7 +87,6 @@ const App = () => {
             } else {
                 setTimestamp(payload.timestamp);
                 setClientId(payload.clientId);
-                alertService.successMessage('Flag saved successfully');
             }
         } catch (err: any) {
             console.error('Error saving global flag:', err);
@@ -110,12 +110,6 @@ const App = () => {
 
     return (
         <div className="yt-app">
-            <Panel className="yt-header">
-                <Heading level={Heading.Levels.H1}>Test Management</Heading>
-                <Text info>
-                    Manage the global toggle and explore your YouTrack projects.
-                </Text>
-            </Panel>
 
             <Panel className="yt-panel">
                 <Group>
